@@ -26,24 +26,24 @@ public class RichText2DocxApplication {
 				"    <tbody>\n" +
 				"        <tr class=\"firstRow\">\n" +
 				"            <td width=\"260\" valign=\"top\" style=\"word-break: break-all;\">\n" +
-				"                1\n" +
+				"                <p>1</p>\n" +
 				"            </td>\n" +
 				"            <td width=\"260\" valign=\"top\" style=\"word-break: break-all;\">\n" +
-				"                2\n" +
+				"                <p>2</p>\n" +
 				"            </td>\n" +
 				"            <td width=\"260\" valign=\"top\" style=\"word-break: break-all;\">\n" +
-				"                3\n" +
+				"                <p>3</p>\n" +
 				"            </td>\n" +
 				"        </tr>\n" +
 				"        <tr>\n" +
 				"            <td width=\"260\" valign=\"top\" style=\"word-break: break-all;\">\n" +
-				"                4\n" +
+				"                <p>4</p>\n" +
 				"            </td>\n" +
 				"            <td width=\"260\" valign=\"top\" style=\"word-break: break-all;\">\n" +
-				"                5\n" +
+				"                <p>5</p>\n" +
 				"            </td>\n" +
 				"            <td width=\"260\" valign=\"top\" style=\"word-break: break-all;\">\n" +
-				"                6\n" +
+				"                <p>6</p>\n" +
 				"            </td>\n" +
 				"        </tr>\n" +
 				"    </tbody>\n" +

@@ -56,10 +56,11 @@ public class RichText2Docx {
                 switch (e.tagName()) {
                     case "p":
                         //一般P标签
-                        String pStr = e.text();
-                        xmlData.append(handleElement("p",pStr));
+                        if (!e.parent().tagName().equals("td")){
+                            String pStr = e.text();
+                            xmlData.append(handleElement("p",pStr));
+                        }
                         break;
-                    //表格中的P标签。
 
                     case "h1":
                         String h1Str = e.text();
@@ -77,6 +78,11 @@ public class RichText2Docx {
                         String srcRealPath = serverPath + src;
                         //收集图片，统一处理。
                         imgPath.add(srcRealPath);
+                        break;
+
+                    case "table":
+                        Elements trs = e.getElementsByTag("tr");
+                        xmlData.append(WordTableConvertor.handleTable(trs));
                         break;
                 }
             }
@@ -224,91 +230,6 @@ public class RichText2Docx {
                 "<w:rFonts w:hint=\"eastAsia\"/>\n</w:rPr>\n<w:t>";
         String pTagEnd = "</w:t>\n</w:r>\n</w:p>";
 
-        String imgTagStart ="<w:p w:rsidR=\"00036018\" w:rsidRDefault=\"00036018\">\n" +
-                "                        <w:r>\n" +
-                "                            <w:rPr>\n" +
-                "                                <w:rFonts w:hint=\"eastAsia\"/>\n" +
-                "                                <w:noProof/>\n" +
-                "                            </w:rPr>\n" +
-                "                            <w:drawing>\n" +
-                "                                <wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\">\n" +
-                "                                    <wp:extent cx=\"5270500\" cy=\"5340985\"/>\n" +
-                "                                    <wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"5715\"/>\n" +
-                "                                    <wp:docPr id=\"1\" name=\"图片 1\" descr=\"\"/>\n" +
-                "                                    <wp:cNvGraphicFramePr>\n" +
-                "                                        <a:graphicFrameLocks xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" noChangeAspect=\"1\"/>\n" +
-                "                                    </wp:cNvGraphicFramePr>\n" +
-                "                                    <a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\">\n" +
-                "                                        <a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">\n" +
-                "                                            <pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">\n" +
-                "                                                <pic:nvPicPr>\n" +
-                "                                                    <pic:cNvPr id=\"1\" name=\"name.jpg\"/>\n" +
-                "                                                    <pic:cNvPicPr/>\n" +
-                "                                                </pic:nvPicPr>\n" +
-                "                                                <pic:blipFill>\n" +
-                "                                                    <a:blip r:embed=\"rId4\" cstate=\"print\">\n" +
-                "                                                        <a:extLst>\n" +
-                "                                                            <a:ext uri=\"{28A0092B-C50C-407E-A947-70E740481C1C}\">\n" +
-                "                                                                <a14:useLocalDpi xmlns:a14=\"http://schemas.microsoft.com/office/drawing/2010/main\" val=\"0\"/>\n" +
-                "                                                            </a:ext>\n" +
-                "                                                        </a:extLst>\n" +
-                "                                                    </a:blip>\n" +
-                "                                                    <a:stretch>\n" +
-                "                                                        <a:fillRect/>\n" +
-                "                                                    </a:stretch>\n" +
-                "                                                </pic:blipFill>\n" +
-                "                                                <pic:spPr>\n" +
-                "                                                    <a:xfrm>\n" +
-                "                                                        <a:off x=\"0\" y=\"0\"/>\n" +
-                "                                                        <a:ext cx=\"5270500\" cy=\"5340985\"/>\n" +
-                "                                                    </a:xfrm>\n" +
-                "                                                    <a:prstGeom prst=\"rect\">\n" +
-                "                                                        <a:avLst/>\n" +
-                "                                                    </a:prstGeom>\n" +
-                "                                                </pic:spPr>\n" +
-                "                                            </pic:pic>\n" +
-                "                                        </a:graphicData>\n" +
-                "                                    </a:graphic>\n" +
-                "                                </wp:inline>\n" +
-                "                            </w:drawing>\n" +
-                "                        </w:r>\n" +
-                "                    </w:p>";
-        String imgTagEnd = "";
-
-        String tableTagStart="<w:tbl>\n" +
-                "                        <w:tblPr>\n" +
-                "                            <w:tblStyle w:val=\"a5\"/>\n" +
-                "                            <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                            <w:tblLook w:val=\"04A0\" w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\"/>\n" +
-                "                        </w:tblPr>\n" +
-                "                        <w:tblGrid>\n" +
-                "                            <w:gridCol w:w=\"2763\"/>\n" +
-                "                            <w:gridCol w:w=\"2763\"/>\n" +
-                "                            <w:gridCol w:w=\"2764\"/>\n" +
-                "                        </w:tblGrid>\n" +
-                "                        <w:tr w:rsidR=\"00036018\" w:rsidTr=\"00036018\">\n" +
-                "                            <w:tc>\n" +
-                "                                <w:tcPr>\n" +
-                "                                    <w:tcW w:w=\"2763\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcPr>\n" +
-                "                                <w:p w:rsidR=\"00036018\" w:rsidRDefault=\"00036018\" w:rsidP=\"00036018\">\n" +
-                "                                    <w:pPr>\n" +
-                "                                        <w:rPr>\n" +
-                "                                            <w:rFonts w:hint=\"eastAsia\"/>\n" +
-                "                                        </w:rPr>\n" +
-                "                                    </w:pPr>\n" +
-                "                                    <w:r>\n" +
-                "                                        <w:rPr>\n" +
-                "                                            <w:rFonts w:hint=\"eastAsia\"/>\n" +
-                "                                        </w:rPr>\n" +
-                "                                        <w:t>表格第一行第一列</w:t>\n" +
-                "                                    </w:r>\n" +
-                "                                </w:p>\n" +
-                "                            </w:tc>\n" +
-                "                        </w:tr>\n" +
-                "                    </w:tbl>";
-        String tableTagEnd="";
-
         StringBuilder sb = new StringBuilder();
 
         switch (elementType) {
@@ -320,9 +241,6 @@ public class RichText2Docx {
                 break;
             case "p":
                 sb.append(pTagStart+text+pTagEnd);
-                break;
-            case "table":
-                //TODO
                 break;
         }
         return sb.toString();
