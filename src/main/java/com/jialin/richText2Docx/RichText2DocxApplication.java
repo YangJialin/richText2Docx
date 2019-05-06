@@ -1,5 +1,6 @@
 package com.jialin.richText2Docx;
 
+import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -51,7 +52,11 @@ public class RichText2DocxApplication {
 				"    <br/>\n" +
 				"</p>";
 		String path = "/Users/gallin/Workspace/kmis/pageoffice/test";
-		text2Docx.resolveHtml(data, path);
+		try {
+			text2Docx.resolveHtml(data, path);
+		} catch (InvalidFormatException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

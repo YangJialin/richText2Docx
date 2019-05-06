@@ -5,6 +5,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.docx4j.Docx4J;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
+import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -22,15 +23,21 @@ import java.util.*;
 
 public class RichText2Docx {
     String serverPath = "";
-    private List<String> docBase64BlockResults = new ArrayList<String>();
+    private List<String> imgPath = new ArrayList<String>();
 
+    Integer relationId = 6;
+    List relationList = new ArrayList();
+    String imageName ="";
     /**
      * 转化html为word并保存。
      *
      * @param data html
      * @param jurl 保存地址
      */
-    public String resolveHtml(String data, String jurl) {
+    public String resolveHtml(String data, String jurl) throws InvalidFormatException {
+
+        WordprocessingMLPackage  wordMLPackage = WordprocessingMLPackage.createPackage();
+
         Template template = getTemplate();
         if (template != null) {
             Map<String, Object> dataMap = new HashMap<String, Object>();
@@ -65,37 +72,11 @@ public class RichText2Docx {
                         break;
 
                     case "img":
-                        //图片。TODO
                         String src = e.attr("src");
                         //图片绝对路径。
                         String srcRealPath = serverPath + src;
-                        File imageFile = new File(srcRealPath);
-                        //获取文件名。
-                        String imageFileName = imageFile.getName();
-                        //获取图片扩展名。
-                        String fileTypeName = WordImageConvertor.getFileSuffix(srcRealPath);
-                        //图片的新名字。
-                        String uuid = UUID.randomUUID().toString();
-                        String docFileName = "image" + uuid + "."+ fileTypeName;
-
-                        // 得到文件的word xml的代码块。
-                        String handledDocxBodyBlock = WordImageConvertor.toDocxBodyBlock(docFileName,uuid);
-
-                        //将图片转换成base64编码的字符串
-                        String base64Content = "";
-                        try {
-                            base64Content = WordImageConvertor.imageToBase64(true,srcRealPath);
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        //生成图片的base4块.
-                        String docBase64BlockResult = WordImageConvertor.generateImageBase64Block(docFileName,
-                                fileTypeName, base64Content);
-                        docBase64BlockResults.add(docBase64BlockResult);
-
-                        xmlData.append(handledDocxBodyBlock);
+                        //收集图片，统一处理。
+                        imgPath.add(srcRealPath);
                         break;
                 }
             }
@@ -107,12 +88,6 @@ public class RichText2Docx {
 
 
             dataMap.put("content",xmlData.toString() );
-            dataMap.put("docBase64BlockResults",getData(docBase64BlockResults));
-            if (docBase64BlockResults.size()>0){
-                dataMap.put("relationship","<Relationship Id=\"rId6\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/image1.jpeg\"/>");
-            }else{
-                dataMap.put("relationship","");
-            }
             Writer wb = null;
             try {
                 File xmlFile = new File(jurl + ".xml");
@@ -127,6 +102,15 @@ public class RichText2Docx {
                 os.close();
 
                 WordprocessingMLPackage wmlPackage = (WordprocessingMLPackage) WordprocessingMLPackage.load(new FileInputStream(xmlFile));
+                if (imgPath.size()>0){
+                    try {
+                        WordImageConvertor.addImgToPkg(wmlPackage,true,imgPath);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
+
                 File file = new File(jurl + ".docx");
                 wmlPackage.save(file, Docx4J.FLAG_SAVE_ZIP_FILE);
 
@@ -325,11 +309,6 @@ public class RichText2Docx {
                 "                    </w:tbl>";
         String tableTagEnd="";
 
-        String imgDataTagStart = "<pkg:part pkg:name=\"/word/media/image1.jpeg\" pkg:contentType=\"image/jpeg\" pkg:compression=\"store\">\n" +
-                "        <pkg:binaryData>data</pkg:binaryData>\n" +
-                "    </pkg:part>";
-        String imgDataTagEnd = "</pkg:binaryData>\n" +
-        "    </pkg:part>";
         StringBuilder sb = new StringBuilder();
 
         switch (elementType) {
@@ -343,9 +322,6 @@ public class RichText2Docx {
                 sb.append(pTagStart+text+pTagEnd);
                 break;
             case "table":
-                //TODO
-                break;
-            case "img":
                 //TODO
                 break;
         }

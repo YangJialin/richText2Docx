@@ -1,18 +1,22 @@
 package com.jialin.richText2Docx;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.binary.Base64;
 
+import org.docx4j.dml.wordprocessingDrawing.Inline;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
+import org.docx4j.wml.Drawing;
+import org.docx4j.wml.ObjectFactory;
+import org.docx4j.wml.P;
+import org.docx4j.wml.R;
 import sun.misc.BASE64Encoder;
 
 
@@ -58,6 +62,31 @@ public class WordImageConvertor {
 		return pictureBuffer.toString();
 	}
 
+	/***
+	 * 添加图片到wordbao。
+	 * @param wordMLPackage
+	 * @param iswebsrc
+	 * @param imageSrcs
+	 * @throws Exception
+	 */
+	public static void addImgToPkg(WordprocessingMLPackage  wordMLPackage, boolean iswebsrc, List<String> imageSrcs) throws Exception {
+		for (String imageSrc:imageSrcs
+			 ) {
+		File file;
+		if (iswebsrc){
+			file = ImageRequest.getWebImg(imageSrc);
+		}else {
+			file=new File(imageSrc);
+		}
+		//判断文件是否存在
+		if(file == null || !file.exists()){
+			throw new FileNotFoundException("文件不存在！");
+		}
+		byte[] bytes = convertImageToByteArray(file);
+		addImageToPackage(wordMLPackage, bytes);
+		}
+	}
+
 
 	/***
 	 * 生成图片信息的标签块。
@@ -65,7 +94,7 @@ public class WordImageConvertor {
 	 */
 	public static String toDocxBodyBlock(
 			String docFileName,
-			String uuid){
+			String rid){
 
 		StringBuilder sb1=new StringBuilder();
 		
@@ -84,7 +113,7 @@ public class WordImageConvertor {
 		sb1.append("<pic:cNvPr id=\""+imgIdCount+"\" name=\"" + docFileName +"\"/><pic:cNvPicPr/>");
 		sb1.append(" </pic:nvPicPr>");
 		sb1.append("<pic:blipFill>");
-		sb1.append("<a:blip r:embed=\"rId4\" cstate=\"print\">");
+		sb1.append("<a:blip r:embed=\""+rid+"\" cstate=\"print\">");
 		sb1.append("<a:extLst>");
 		sb1.append("<a:ext uri=\"{28A0092B-C50C-407E-A947-70E740481C1C}\">");
 		sb1.append("<a14:useLocalDpi xmlns:a14=\"http://schemas.microsoft.com/office/drawing/2010/main\" val=\"0\"/>");
@@ -160,7 +189,82 @@ public class WordImageConvertor {
 		
 		return result;
 	}
-	
+
+	/**
+	 *  Docx4j拥有一个由字节数组创建图片部件的工具方法, 随后将其添加到给定的包中. 为了能将图片添加
+	 *  到一个段落中, 我们需要将图片转换成内联对象. 这也有一个方法, 方法需要文件名提示, 替换文本,
+	 *  两个id标识符和一个是嵌入还是链接到的指示作为参数.
+	 *  一个id用于文档中绘图对象不可见的属性, 另一个id用于图片本身不可见的绘制属性. 最后我们将内联
+	 *  对象添加到段落中并将段落添加到包的主文档部件.
+	 *
+	 *  @param wordMLPackage 要添加图片的包
+	 *  @param bytes         图片对应的字节数组
+	 *  @throws Exception    不幸的createImageInline方法抛出一个异常(没有更多具体的异常类型)
+	 */
+	private static void addImageToPackage(WordprocessingMLPackage wordMLPackage,
+										  byte[] bytes) throws Exception {
+		BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, bytes);
+
+		int docPrId = 1;
+		int cNvPrId = 2;
+		Inline inline = imagePart.createImageInline("Filename hint","Alternative text", docPrId, cNvPrId, false);
+
+		P paragraph = addInlineImageToParagraph(inline);
+
+		wordMLPackage.getMainDocumentPart().addObject(paragraph);
+	}
+
+	/**
+	 *  创建一个对象工厂并用它创建一个段落和一个可运行块R.
+	 *  然后将可运行块添加到段落中. 接下来创建一个图画并将其添加到可运行块R中. 最后我们将内联
+	 *  对象添加到图画中并返回段落对象.
+	 *
+	 * @param   inline 包含图片的内联对象.
+	 * @return  包含图片的段落
+	 */
+	private static P addInlineImageToParagraph(Inline inline) {
+		// 添加内联对象到一个段落中
+		ObjectFactory factory = new ObjectFactory();
+		P paragraph = factory.createP();
+		R run = factory.createR();
+		paragraph.getContent().add(run);
+		Drawing drawing = factory.createDrawing();
+		run.getContent().add(drawing);
+		drawing.getAnchorOrInline().add(inline);
+		return paragraph;
+	}
+
+
+	/**
+	 * 将图片从文件转换成字节数组.
+	 *
+	 * @param file
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	private static byte[] convertImageToByteArray(File file) throws FileNotFoundException, IOException {
+		InputStream is = new FileInputStream(file );
+		long length = file.length();
+		// You cannot create an array using a long, it needs to be an int.
+		if (length > Integer.MAX_VALUE) {
+			System.out.println("File too large!!");
+		}
+		byte[] bytes = new byte[(int)length];
+		int offset = 0;
+		int numRead = 0;
+		while (offset < bytes.length && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0) {
+			offset += numRead;
+		}
+		// Ensure all the bytes have been read
+		if (offset < bytes.length) {
+			System.out.println("Could not completely read file "+file.getName());
+		}
+		is.close();
+		return bytes;
+	}
+
+
 	/**
 	 * 获取图片后缀名，如jpg,png等
 	 * @param srcRealPath 图片绝对路径
