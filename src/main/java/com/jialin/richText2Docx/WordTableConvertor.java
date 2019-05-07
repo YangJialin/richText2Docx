@@ -1,6 +1,7 @@
 package com.jialin.richText2Docx;
 
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Entities;
 import org.jsoup.select.Elements;
 
 /**
@@ -31,7 +32,16 @@ public class WordTableConvertor {
                                 "</w:tcPr><w:p w:rsidR=\"00036018\" w:rsidRDefault=\"00036018\" w:rsidP=\"00036018\">\n" +
                                 "<w:pPr><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/>\n" +
                                 "</w:rPr><w:t>");
-                        tableXML.append(subE.text());
+                        tableXML.append(Entities.escape(subE.text()));
+                        tableXML.append("</w:t></w:r></w:p></w:tc>\n");
+                        break;
+
+                    case "th":
+                        tableXML.append("<w:tc><w:tcPr><w:tcW w:w=\"2763\" w:type=\"dxa\"/>\n" +
+                                "</w:tcPr><w:p w:rsidR=\"00036018\" w:rsidRDefault=\"00036018\" w:rsidP=\"00036018\">\n" +
+                                "<w:pPr><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/>\n" +
+                                "</w:rPr><w:t>");
+                        tableXML.append(Entities.escape(subE.text()));
                         tableXML.append("</w:t></w:r></w:p></w:tc>\n");
                         break;
                 }

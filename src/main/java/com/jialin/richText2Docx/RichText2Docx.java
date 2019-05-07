@@ -10,6 +10,8 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Entities;
+import org.jsoup.safety.Whitelist;
 import org.jsoup.select.Elements;
 
 import javax.sql.rowset.serial.SerialBlob;
@@ -36,8 +38,6 @@ public class RichText2Docx {
      */
     public String resolveHtml(String data, String jurl) throws InvalidFormatException {
 
-        WordprocessingMLPackage  wordMLPackage = WordprocessingMLPackage.createPackage();
-
         Template template = getTemplate();
         if (template != null) {
             Map<String, Object> dataMap = new HashMap<String, Object>();
@@ -45,6 +45,7 @@ public class RichText2Docx {
 //            data = handler.getHandledDocBodyBlock();
 //            handledBase64Block += handler.getData(handler.getDocBase64BlockResults());
 //            xmlimaHref += handler.getData(handler.getXmlImgRefs());
+
             Document document = Jsoup.parse(data);
             StringBuilder xmlData = new StringBuilder();
             //补全html标签。
@@ -56,20 +57,20 @@ public class RichText2Docx {
                 switch (e.tagName()) {
                     case "p":
                         //一般P标签
-                        if (!e.parent().tagName().equals("td")){
+                        if (!e.parent().tagName().equals("td") && !e.parent().tagName().equals("th")){
                             String pStr = e.text();
-                            xmlData.append(handleElement("p",pStr));
+                            xmlData.append(handleElement("p",Entities.escape(pStr)));
                         }
                         break;
 
                     case "h1":
                         String h1Str = e.text();
-                        xmlData.append(handleElement("h1",h1Str));
+                        xmlData.append(handleElement("h1",Entities.escape(h1Str)));
                         break;
 
                     case "h2":
                         String h2Str = e.text();
-                        xmlData.append(handleElement("h2",h2Str));
+                        xmlData.append(handleElement("h2",Entities.escape(h2Str)));
                         break;
 
                     case "img":
